@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Student portal</string>
+    <string name="url">URL</string>
+    <string name="create_portal">Create portal</string>
+    <string name="show_portal">Show portal</string>
+    <string name="action_settings">Settings</string>
+    <string name="name">Name</string>
+</resources>
