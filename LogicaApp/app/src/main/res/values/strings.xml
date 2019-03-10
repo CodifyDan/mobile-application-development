@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Logica App</string>
+    <string name="conjunction_and_text">Conjunction (AND)</string>
+    <string name="t_value">T</string>
+    <string name="f_value">F</string>
+    <string name="a_value">A</string>
+    <string name="b_value">B</string>
+    <string name="a_b_value">A ^ B</string>
+    <string name="submit_button_value">Submit</string>
+    <string name="t_or_f_value">T or F</string>
+</resources>
