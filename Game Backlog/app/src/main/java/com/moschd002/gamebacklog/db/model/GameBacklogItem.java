@@ -1,9 +1,11 @@
-package com.moschd002.gamebacklog;
+package com.moschd002.gamebacklog.db.model;
 
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.TypeConverters;
+
+import com.moschd002.gamebacklog.utils.DateConverter;
 
 import java.io.Serializable;
 import java.sql.Date;
@@ -68,28 +70,5 @@ public class GameBacklogItem implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-
-    public enum StatusTypes {
-        STRING_ONE("ONE"),
-        STRING_TWO("TWO");
-
-        private final String text;
-
-        /**
-         * @param text
-         */
-        StatusTypes(final String text) {
-            this.text = text;
-        }
-
-        /* (non-Javadoc)
-         * @see java.lang.Enum#toString()
-         */
-        @Override
-        public String toString() {
-            return text;
-        }
     }
 }

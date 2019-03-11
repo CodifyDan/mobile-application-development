@@ -1,4 +1,4 @@
-package com.moschd002.gamebacklog;
+package com.moschd002.gamebacklog.utils;
 
 import android.arch.persistence.room.TypeConverter;
 

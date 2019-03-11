@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.moschd002.bucketlist", appContext.getPackageName());
+        assertEquals("com.moschd002.gamebacklog", appContext.getPackageName());
     }
 }

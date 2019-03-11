@@ -7,4 +7,5 @@
     <string name="status">Status</string>
     <string name="platform">Platform</string>
     <string name="add_game_to_backlog">ADD GAME TO BACKLOG</string>
+    <string name="form_validation_message">Please fill in all the fields above</string>
 </resources>
