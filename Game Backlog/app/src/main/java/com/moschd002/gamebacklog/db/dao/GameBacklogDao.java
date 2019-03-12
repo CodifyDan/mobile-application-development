@@ -1,5 +1,6 @@
 package com.moschd002.gamebacklog.db.dao;
 
+import android.arch.lifecycle.LiveData;
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
@@ -22,9 +23,6 @@ public interface GameBacklogDao {
     @Update
     void update(GameBacklogItem backlogItem);
 
-    @Delete
-    void delete(List<GameBacklogItem> backlogItem);
-
     @Query("DELETE FROM game_backlog_table")
     void deleteAll();
 
@@ -32,6 +30,6 @@ public interface GameBacklogDao {
      * @return
      */
     @Query("SELECT * from game_backlog_table")
-    List<GameBacklogItem> getGameBacklogItems();
+    public LiveData<List<GameBacklogItem>> getGameBacklogItems();
 
 }

@@ -1,6 +1,7 @@
 package com.moschd002.gamebacklog;
 
 import android.app.Activity;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,6 +14,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 
 import com.moschd002.gamebacklog.db.model.GameBacklogItem;
+import com.moschd002.gamebacklog.ui.MainViewModel;
 
 import java.sql.Date;
 import java.util.Calendar;
@@ -22,6 +24,7 @@ public class CreateItemActivity extends AppCompatActivity {
     private EditText mPlatform;
     private FloatingActionButton mCreateBtn;
     private Spinner mDropdown;
+    private MainViewModel mMainViewModel;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -31,6 +34,7 @@ public class CreateItemActivity extends AppCompatActivity {
         mTitle = findViewById(R.id.titleText);
         mPlatform = findViewById(R.id.platformText);
         mDropdown = findViewById(R.id.statusSelector);
+        mMainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
 
         String[] items = new String[]{"Want to play", "Playing", "Stalled", "Dropped"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, items);
@@ -49,8 +53,8 @@ public class CreateItemActivity extends AppCompatActivity {
                 GameBacklogItem gameBacklogItem = new GameBacklogItem(title, platform, new Date(calendar.getTime().getTime()), status);
 
                 if (!title.isEmpty() && !platform.isEmpty() && !status.isEmpty()) {
+                    mMainViewModel.insert(gameBacklogItem);
                     Intent intent = new Intent();
-                    intent.putExtra(MainActivity.CREATED_GAME_BACKLOG_ITEM, gameBacklogItem);
                     setResult(Activity.RESULT_OK, intent);
                     finish();
                 } else {

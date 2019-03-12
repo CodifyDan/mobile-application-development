@@ -1,8 +1,11 @@
 package com.moschd002.gamebacklog;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -16,26 +19,26 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.moschd002.gamebacklog.db.GameBacklogDatabase;
 import com.moschd002.gamebacklog.db.model.GameBacklogItem;
 import com.moschd002.gamebacklog.ui.GameBacklogAdapter;
+import com.moschd002.gamebacklog.ui.MainViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements GameBacklogAdapter.ButtonClickListener, RecyclerView.OnItemTouchListener {
 
     private RecyclerView mGameBacklogRecyclerView;
     private GameBacklogAdapter mGameBacklogAdapter;
     private List<GameBacklogItem> mGameBacklogItems;
-    private GameBacklogDatabase db;
-    private Executor mExecutor;
     private GestureDetector mGestureDetector;
+    private MainViewModel mMainViewModel;
+
+    private GameBacklogItem mRecentlyDeletedGameBacklogItem;
+    private int mRecentlyDeletedGameBacklogItemPosition;
+
     public static final String CREATED_GAME_BACKLOG_ITEM = "create";
     public static final String UPDATE_GAME_BACKLOG_ITEM = "update";
-    private final String UNDO_TEXT = "UNDO";
     public static final int REQUEST_CODE_CREATE = 1001;
     public static final int REQUEST_CODE_UPDATE = 1002;
 
@@ -45,14 +48,18 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        db = GameBacklogDatabase.getDatabase(this);
-        mExecutor = Executors.newSingleThreadExecutor();
         mGameBacklogItems = new ArrayList<>();
 
         setupRecyclerView();
-        getAllGameBacklogItems();
         setupGestures();
+
+        mMainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        mMainViewModel.getGameBacklogs().observe(this, new Observer<List<GameBacklogItem>>() {
+            @Override
+            public void onChanged(@Nullable List<GameBacklogItem> gameBacklogItems) {
+                updateUI(gameBacklogItems);
+            }
+        });
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -75,7 +82,6 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
 
     private void setupGestures() {
         mGameBacklogRecyclerView.addOnItemTouchListener(this);
-
         mGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onSingleTapUp(MotionEvent e) {
@@ -91,17 +97,20 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
 
             @Override
             public void onSwiped(@NonNull final RecyclerView.ViewHolder viewHolder, int swipeDirection) {
-                final int currentItem = (viewHolder.getAdapterPosition());
+                final int currentItem = viewHolder.getAdapterPosition();
                 final GameBacklogItem gameBacklogItem = mGameBacklogItems.get(currentItem);
 
+                mRecentlyDeletedGameBacklogItem = gameBacklogItem;
+                mRecentlyDeletedGameBacklogItemPosition = currentItem;
+
                 mGameBacklogItems.remove(gameBacklogItem);
-                mGameBacklogAdapter.notifyDataSetChanged();
+                mGameBacklogAdapter.notifyItemRemoved(currentItem);
 
                 if (swipeDirection == ItemTouchHelper.LEFT || swipeDirection == ItemTouchHelper.RIGHT) {
 
                     Snackbar.make(findViewById(android.R.id.content),
-                            "Deleted: " + gameBacklogItem.getTitle(), Snackbar.LENGTH_LONG)
-                            .setAction(UNDO_TEXT, new View.OnClickListener() {
+                            getResources().getString(R.string.deleted_item) + " " + gameBacklogItem.getTitle(), Snackbar.LENGTH_LONG)
+                            .setAction(getResources().getString(R.string.undo), new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
 
@@ -112,9 +121,10 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
                             super.onDismissed(snackbar, dismissType);
                             if (dismissType == DISMISS_EVENT_TIMEOUT || dismissType == DISMISS_EVENT_SWIPE
                                     || dismissType == DISMISS_EVENT_CONSECUTIVE || dismissType == DISMISS_EVENT_MANUAL) {
-                                deleteGameBacklogItem(gameBacklogItem);
+                                mMainViewModel.delete(gameBacklogItem);
                             } else {
-                                getAllGameBacklogItems();
+                                mGameBacklogItems.add(mRecentlyDeletedGameBacklogItemPosition, mRecentlyDeletedGameBacklogItem);
+                                mGameBacklogAdapter.notifyItemInserted(mRecentlyDeletedGameBacklogItemPosition);
                             }
                         }
                     }).show();
@@ -124,61 +134,6 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(GameBacklogItemTouchCallback);
         itemTouchHelper.attachToRecyclerView(mGameBacklogRecyclerView);
-    }
-
-    private void getAllGameBacklogItems() {
-        mExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                final List<GameBacklogItem> gameBacklogItems = db.GameBacklogDao().getGameBacklogItems();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        updateUI(gameBacklogItems);
-                    }
-                });
-            }
-        });
-    }
-
-    private void insertGameBacklogItem(final GameBacklogItem gameBacklogItem) {
-        mExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                db.GameBacklogDao().insert(gameBacklogItem);
-                getAllGameBacklogItems();
-            }
-        });
-    }
-
-    private void updateGameBacklogItem(final GameBacklogItem gameBacklogItem) {
-        mExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                db.GameBacklogDao().update(gameBacklogItem);
-                getAllGameBacklogItems();
-            }
-        });
-    }
-
-    private void deleteGameBacklogItem(final GameBacklogItem gameBacklogItem) {
-        mExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                db.GameBacklogDao().delete(gameBacklogItem);
-                getAllGameBacklogItems();
-            }
-        });
-    }
-
-    private void deleteAllGameBacklogItems() {
-        mExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                db.GameBacklogDao().deleteAll();
-                getAllGameBacklogItems();
-            }
-        });
     }
 
     private void updateUI(List<GameBacklogItem> gameBacklogItems) {
@@ -198,13 +153,18 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
         int id = item.getItemId();
 
         if (id == R.id.action_delete_item) {
+
+            if (mGameBacklogItems.isEmpty()) {
+                return false;
+            }
+
             View view = findViewById(android.R.id.content);
+            mGameBacklogAdapter.notifyItemRangeRemoved(0, mGameBacklogItems.size()); // animates the removal
             mGameBacklogItems.clear();
-            mGameBacklogAdapter.notifyDataSetChanged();
 
             Snackbar.make(view,
-                    "Deleted all games", Snackbar.LENGTH_LONG)
-                    .setAction(UNDO_TEXT, new View.OnClickListener() {
+                    getResources().getString(R.string.deleted_all), Snackbar.LENGTH_LONG)
+                    .setAction(getResources().getString(R.string.undo), new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
 
@@ -215,9 +175,10 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
                     super.onDismissed(snackbar, dismissType);
                     if (dismissType == DISMISS_EVENT_TIMEOUT || dismissType == DISMISS_EVENT_SWIPE
                             || dismissType == DISMISS_EVENT_CONSECUTIVE || dismissType == DISMISS_EVENT_MANUAL) {
-                        deleteAllGameBacklogItems();
+                        mMainViewModel.deleteAll();
                     } else {
-                        getAllGameBacklogItems();
+                        mGameBacklogItems.addAll(mMainViewModel.getGameBacklogs().getValue());
+                        mGameBacklogAdapter.notifyDataSetChanged();
                     }
                 }
             }).show();
@@ -249,20 +210,5 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
         Intent intent = new Intent(MainActivity.this, UpdateItemActivity.class);
         intent.putExtra(UPDATE_GAME_BACKLOG_ITEM, gameBacklogItem);
         startActivityForResult(intent, REQUEST_CODE_UPDATE);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_CREATE) {
-            if (resultCode == RESULT_OK) {
-                GameBacklogItem gameBacklogItem = (GameBacklogItem) data.getExtras().getSerializable(MainActivity.CREATED_GAME_BACKLOG_ITEM);
-                insertGameBacklogItem(gameBacklogItem);
-            }
-        } else if (requestCode == REQUEST_CODE_UPDATE) {
-            if (resultCode == RESULT_OK) {
-                GameBacklogItem gameBacklogItem = (GameBacklogItem) data.getExtras().getSerializable(MainActivity.UPDATE_GAME_BACKLOG_ITEM);
-                updateGameBacklogItem(gameBacklogItem);
-            }
-        }
     }
 }

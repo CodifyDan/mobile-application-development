@@ -1,6 +1,7 @@
 package com.moschd002.gamebacklog;
 
 import android.app.Activity;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,6 +14,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 
 import com.moschd002.gamebacklog.db.model.GameBacklogItem;
+import com.moschd002.gamebacklog.ui.MainViewModel;
 
 import java.sql.Date;
 import java.util.Calendar;
@@ -23,12 +25,14 @@ public class UpdateItemActivity extends AppCompatActivity {
     private FloatingActionButton mCreateBtn;
     private Spinner mDropdown;
     private GameBacklogItem mGameBacklogItem;
+    private MainViewModel mMainViewModel;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.update_main);
         mGameBacklogItem = (GameBacklogItem) getIntent().getExtras().getSerializable(MainActivity.UPDATE_GAME_BACKLOG_ITEM);
+        mMainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
 
         mTitle = findViewById(R.id.titleUpdateText);
         mTitle.setText(mGameBacklogItem.getTitle());
@@ -56,8 +60,8 @@ public class UpdateItemActivity extends AppCompatActivity {
                 mGameBacklogItem.setDate(new Date(calendar.getTime().getTime()));
 
                 if (!mGameBacklogItem.getTitle().isEmpty() && !mGameBacklogItem.getPlatform().isEmpty() && !mGameBacklogItem.getStatus().isEmpty()) {
+                    mMainViewModel.update(mGameBacklogItem);
                     Intent intent = new Intent();
-                    intent.putExtra(MainActivity.UPDATE_GAME_BACKLOG_ITEM, mGameBacklogItem);
                     setResult(Activity.RESULT_OK, intent);
                     finish();
                 } else {
