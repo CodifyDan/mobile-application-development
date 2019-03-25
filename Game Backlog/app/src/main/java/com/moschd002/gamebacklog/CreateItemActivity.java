@@ -49,9 +49,9 @@ public class CreateItemActivity extends AppCompatActivity {
                 String status = mDropdown.getSelectedItem().toString();
 
                 Calendar calendar = Calendar.getInstance();
-
                 GameBacklogItem gameBacklogItem = new GameBacklogItem(title, platform, new Date(calendar.getTime().getTime()), status);
 
+                // check if all fields have been filled in
                 if (!title.isEmpty() && !platform.isEmpty() && !status.isEmpty()) {
                     mMainViewModel.insert(gameBacklogItem);
                     Intent intent = new Intent();

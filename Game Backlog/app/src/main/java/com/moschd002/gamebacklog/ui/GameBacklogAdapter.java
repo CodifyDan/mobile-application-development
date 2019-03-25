@@ -48,7 +48,6 @@ public class GameBacklogAdapter extends RecyclerView.Adapter<GameBacklogAdapter.
         gameBacklogItemViewHolder.mPlatform.setText(gameBacklogItem.getPlatform());
         gameBacklogItemViewHolder.mStatus.setText(gameBacklogItem.getStatus());
 
-
         Date date = new Date(gameBacklogItem.getDate().getTime());
         String createdOn = DateFormat.getDateInstance().format(date);
 

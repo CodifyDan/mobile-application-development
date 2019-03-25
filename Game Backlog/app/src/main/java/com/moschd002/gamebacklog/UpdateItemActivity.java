@@ -59,7 +59,10 @@ public class UpdateItemActivity extends AppCompatActivity {
                 mGameBacklogItem.setStatus(mDropdown.getSelectedItem().toString());
                 mGameBacklogItem.setDate(new Date(calendar.getTime().getTime()));
 
+                // check if all fields have been filled in.
                 if (!mGameBacklogItem.getTitle().isEmpty() && !mGameBacklogItem.getPlatform().isEmpty() && !mGameBacklogItem.getStatus().isEmpty()) {
+
+                    // update the current gameBackLogItem
                     mMainViewModel.update(mGameBacklogItem);
                     Intent intent = new Intent();
                     setResult(Activity.RESULT_OK, intent);

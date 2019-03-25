@@ -37,7 +37,6 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
     private GameBacklogItem mRecentlyDeletedGameBacklogItem;
     private int mRecentlyDeletedGameBacklogItemPosition;
 
-    public static final String CREATED_GAME_BACKLOG_ITEM = "create";
     public static final String UPDATE_GAME_BACKLOG_ITEM = "update";
     public static final int REQUEST_CODE_CREATE = 1001;
     public static final int REQUEST_CODE_UPDATE = 1002;
@@ -57,6 +56,7 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
         mMainViewModel.getGameBacklogs().observe(this, new Observer<List<GameBacklogItem>>() {
             @Override
             public void onChanged(@Nullable List<GameBacklogItem> gameBacklogItems) {
+                // if the gamebacklog item list changes, notify and update the UI
                 updateUI(gameBacklogItems);
             }
         });
@@ -101,11 +101,13 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
                 final GameBacklogItem gameBacklogItem = mGameBacklogItems.get(currentItem);
 
                 mRecentlyDeletedGameBacklogItem = gameBacklogItem;
+                // we keep the position of the item so that we can re-add in the same place it if the deletion is cancelled
                 mRecentlyDeletedGameBacklogItemPosition = currentItem;
 
                 mGameBacklogItems.remove(gameBacklogItem);
                 mGameBacklogAdapter.notifyItemRemoved(currentItem);
 
+                // on swipe left or right, delete the gameBackLogItem
                 if (swipeDirection == ItemTouchHelper.LEFT || swipeDirection == ItemTouchHelper.RIGHT) {
 
                     Snackbar.make(findViewById(android.R.id.content),
@@ -173,10 +175,13 @@ public class MainActivity extends AppCompatActivity implements GameBacklogAdapte
                 @Override
                 public void onDismissed(Snackbar snackbar, int dismissType) {
                     super.onDismissed(snackbar, dismissType);
+
+                    // if snackbar is closed
                     if (dismissType == DISMISS_EVENT_TIMEOUT || dismissType == DISMISS_EVENT_SWIPE
                             || dismissType == DISMISS_EVENT_CONSECUTIVE || dismissType == DISMISS_EVENT_MANUAL) {
                         mMainViewModel.deleteAll();
                     } else {
+                        // if undo button is clicked, re-add all the items
                         mGameBacklogItems.addAll(mMainViewModel.getGameBacklogs().getValue());
                         mGameBacklogAdapter.notifyDataSetChanged();
                     }
